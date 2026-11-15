@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Cook Converter</title>
+<style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+  body { background: #fff7ed; margin: 0; padding: 16px; }`
+  .container { max-width: 480px; margin: auto; background: #fff; padding: 22px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  h1 { text-align: center; color: #ea580c; margin: 0; font-size: 26px; line-height: 1.2; }
+  .subtitle { text-align: center; color: #888; margin-top: 6px; }
+  label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+  select, input { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; background: #fff; }
+  .row { display: flex; align-items: end; gap: 10px; }
+  .row > div { flex: 1; }
+  .arrow { font-size: 22px; padding-bottom: 10px; }
+  .result-box { background: #fff7ed; border-radius: 12px; text-align: center; padding: 20px; margin-top: 18px; }
+  #result { font-size: 32px; font-weight: bold; color: #111; }
+  #resultLabel { color: #777; margin-top: 4px; }
+  #saveBtn { width: 100%; padding: 14px; margin-top: 14px; background: #ea580c; color: white; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; }
+  h2 { margin-top: 22px; font-size: 19px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { background: #f9f9f9; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  li button { background: #fee2e2; border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+  #emptyMsg { color: #999; text-align: center; }
+  .note { background: #fef9c3; padding: 12px; border-radius: 10px; font-size: 13px; color: #555; margin-top: 16px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🍳 Home Cook Converter</h1>
+  <p class="subtitle">Convert common units & save favorites</p>
+  <label>Category</label>
+  <select id="category">
+    <option value="weight">Weight</option>
+    <option value="volume">Volume</option>
+    <option value="temp">Temperature</option>
+  </select>
+  <label>Value</label>
+  <input type="number" id="inputValue" value="100">
+  <div class="row">
+    <div><label>From</label><select id="fromUnit">
+        <option>Grams (g)</option>
+        <option>Kilograms (kg)</option>
+        <option>Ounce (oz)</option>
+        <option>Pounds (lbs)</option>
+        <option>Cups (Flour)</option>
+        <option>Cups (Sugar)</option>
+        </select></div>
+    <div class="arrow">→</div>
+    <div><label>To</label><select id="toUnit">
+        <option>Grams (g)</option>
+        <option>Kilograms (kg)</option>
+        <option>Ounce (oz)</option>
+        <option>Pounds (lbs)</option>
+        <option>Cups (Flour)</option>
+        <option>Cups (Sugar)</option>
+        </select></div>
+  </div>
+  <div class="result-box"><div id="result">0</div><div id="resultLabel"></div></div>
+  <button id="saveBtn">❤️ Save to Favorites</button>
+  <h2>❤️ Favorites</h2>
+  <ul id="favList"></ul>
+  <p id="emptyMsg">No favorites yet</p>
+  <div class="note">💡 Tip: Conversions use standard US cooking cups (236.6 ml). Cup-to-gram varies by ingredient — e.g. Flour vs Sugar.</div>
+</div>
+<script>
+var units = {
+  weight: ["Grams (g)", "Kilograms (kg)", "Ounces (oz)", "Pounds (lbs)", "Cups (Flour)", "Cups (Sugar)"],
+  volume: ["Milliliters (ml)", "Liters (L)", "Cups", "Tablespoons (tbsp)", "Teaspoons (tsp)"],
+  temp: ["Celsius (°C)", "Fahrenheit (°F)"]
+};
+var categoryEl = document.getElementById('category');
+var fromEl = document.getElementById('fromUnit');
+var toEl = document.getElementById('toUnit');
+var inputEl = document.getElementById('inputValue');
+var resultEl = document.getElementById('result');
+var labelEl = document.getElementById('resultLabel');
+var favList = document.getElementById('favList');
+var emptyMsg = document.getElementById('emptyMsg');
+var favorites = [];
+try{favorites= JSON.parse(localStorage.getItem('favorites') || '[]');} catch(e){favorites=[];}
+function saveFav(){try{localStorage.setItem('favorite', JSON.stringify(favorites));} catch(e){} }
+function loadUnits() {
+  var list = units[categoryEl.value];
+  var htmll1=" ";
+  var html2=" ";
+  for (var i = 0;i < list.lenght; i++){
+    html1 += "<optional>" + "</optional>";
+    html2 += "<optional>" + "<optional>";
+    }
+
+  fromEl.innerHTML= html1;
+  toEl.innerHTML = html2;
+  toEl.selectedIndex = 1;
+  convert();
+}
+function convert() {
+  var v = parseFloat(inputEl.value) || 0;
+  var from = fromEl.value; let to = toEl.value; let result = v;
+  if (from === to) result = v;
+  else if (from.indexOf('Celsius') !== -1 && to.indexOf('Fahrenheit') !== -1) result = v * 9/5 + 32;
+  else if (from.indexOf('Fahrenheit') !== -1 && to.indexOf('Celsius') !== -1) result = (v - 32) * 5/9;
+  else {
+    var base = v;
+    if (from === 'Kilograms (kg)') base = v * 1000;
+    if (from === 'Ounces (oz)') base = v * 28.35;
+    if (from === 'Pounds (lbs)') base = v * 453.59;
+    if (from === 'Cups (Flour)') base = v * 125;
+    if (from === 'Cups (Sugar)') base = v * 200;
+    if (from === 'Liters (L)') base = v * 1000;
+    if (from === 'Cups') base = v * 240;
+    if (from === 'Tablespoons (tbsp)') base = v * 15;
+    if (from === 'Teaspoons (tsp)') base = v * 5;
+    if (to === 'Grams (g)' || to === 'Milliliters (ml)') result = base;
+    if (to === 'Kilograms (kg)' || to === 'Liters (L)') result = base / 1000;
+    if (to === 'Ounces (oz)') result = base / 28.35;
+    if (to === 'Pounds (lbs)') result = base / 453.59;
+    if (to === 'Cups (Flour)') result = base / 125;
+    if (to === 'Cups (Sugar)') result = base / 200;
+    if (to === 'Cups') result = base / 240;
+    if (to === 'Tablespoons (tbsp)') result = base / 15;
+    if (to === 'Teaspoons (tsp)') result = base / 5;
+  }
+  resultEl.textContent = result.toFixed(2) + ' ' + to;
+  labelEl.textContent = v + ' ' + from + '=';
+}
+function renderFav() {
+  favList.innerHTML = '';
+  emptyMsg.style.display = favorites.length ? 'none' : 'block';
+  for (var i =0; i< favorites.lenght; i++) {
+    var li = document.createElement('li');
+    li.innerHTML = "<span>" + favorites[i] + "</span><button onclick='removeFav(" + i + ")'>🗑️</button>";
+    favList.appendChild(li);
+  }
+}
+function removeFav(i) { favorites.splice(i, 1); localStorage.setItem('favorites', JSON.stringify(favorites)); renderFav(); }
+document.getElementById('saveBtn').addEventListener('click', () => {
+  var label = inputEl.value + ' ' + fromEl.value + '='+ resultEl.textContent;
+  if (favorites.indexOf(label) === -1) {
+    favorites.push(label);
+    saveFav();
+    renderFav();
+    alert('Saved! ❤️');
+ }
+});
+categoryEl.addEventListener('change', loadUnits);
+fromEl.addEventListener('change', convert);
+toEl.addEventListener('change', convert);
+inputEl.addEventListener('input', convert);
+loadUnits(); renderFav();
+</script>
